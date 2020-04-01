@@ -1,3 +1,8 @@
+# Executes commands at the start of an interactive session.
+#
+# Authors:
+#   Sorin Ionescu <sorin.ionescu@gmail.com>
+
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -5,38 +10,36 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-#
-# Executes commands at the start of an interactive session.
-#
-# Authors:
-#   Sorin Ionescu <sorin.ionescu@gmail.com>
-#
-
 # Source Prezto.
 if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
   source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 fi
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 HIST_STAMPS='yyyy-mm-dd'
-HISTFILE=$HOME/.zsh_history
 HISTSIZE=SAVEHIST=2000000
+HISTFILE=$HOME/.zsh_history
+setopt AUTOCD
+setopt AUTOPUSHD PUSHDMINUS PUSHDSILENT PUSHDTOHOME
 setopt COMPLETE_ALIASES
 setopt COMPLETE_IN_WORD # allow completion from within a word/phrase
 setopt EXTENDED_GLOB # If the EXTENDED_GLOB option is set, the ‘^’ and ‘#’ characters also denote a pattern
-setopt EXTENDED_HISTORY
 setopt INTERACTIVECOMMENTS # pound sign in interactive prompt
 setopt NUMERIC_GLOB_SORT
 setopt PROMPT_SUBST
-setopt HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE HIST_VERIFY
-setopt INC_APPEND_HISTORY SHARE_HISTORY LONG_LIST_JOBS
-setopt LIST_AMBIGUOUS # complete as much of a completion until it gets ambiguous
+setopt EXTENDED_HISTORY
+setopt HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE HIST_NO_STORE HIST_NO_FUNCTIONS HIST_REDUCE_BLANKS
+setopt INC_APPEND_HISTORY SHARE_HISTORY LONG_LIST_JOBS HIST_VERIFY
+unsetopt CORRECT
+# setopt LIST_AMBIGUOUS # complete as much of a completion until it gets ambiguous
 export EDITOR='code'
 export DEFAULT_USER='jking'
 export GOROOT='/usr/local/opt/go/libexec/bin'
 export GOPATH=$HOME/go
 export VTKPATH='/usr/local/VTK'
 export PKG_CONFIG_PATH='/usr/local/opt/curl/lib/pkgconfig:/usr/local/opt/icu4c/lib/pkgconfig:/usr/local/opt/ruby/lib/pkgconfig'
-export ZSH_CACHE=$HOME/.zsh/cache
+# export ZSH_CACHE=$HOME/.zsh/cache
 export RBENV_SHELL=zsh
 export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
 export ITERM2_SQUELCH_MARK=1
@@ -59,8 +62,13 @@ source /usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.z
 source $HOME/.iterm2_shell_integration.zsh
 iterm2_print_user_vars() { iterm2_set_user_var gitBranch $((git branch 2> /dev/null) | grep \* | cut -c3-) }
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+expand-or-complete-with-dots() {      # This bunch of code displays red dots when autocompleting
+  echo -n "\e[31m......\e[0m"         # a command with the tab key, "Oh-my-zsh"-style.
+  zle expand-or-complete
+  zle redisplay
+}
+zle -N expand-or-complete-with-dots
+bindkey "^I" expand-or-complete-with-dots
 
 ######################################################################
 #	F u n c t i o n s
@@ -154,7 +162,6 @@ mergesubs() {
 }
 
 # find $PWD -path '*/.*' -prune -o \( -name '*.azw' -or -name '*.azw3' -or -name '*.azw4' -or -name '*.chm' -or -name '*.docx' -or -name '*.fb2' -or -name '*.fbz' -or -name '*.html' -or -name '*.htmlz' -or -name '*.lit' -or -name '*.lrf' -or -name '*.mobi' -or -name '*.odt' -or -name '*.prc' -or -name '*.pdb' -or -name '*.pml' -or -name '*.rb' -or -name '*.rtf' -or -name '*.snb' -or -name '*.tcr' -or -name '*.txt' -or -name '*.txtz' \) -print0 | parallel -0 "ebook-convert {} {}.epub --no-default-epub-cover && rm {}"
-
 
 ###################################################
 # https://shkspr.mobi/blog/2018/03/convert-surround-sound-wav-albums-to-individual-opus-files/
@@ -282,12 +289,11 @@ jpnem() {
 	done
 }
 
-derus() {
+jpnonly() {
 	for infile in *.(avi|divx|flv|mov|m4v|mkv|mp4|mpg|mpeg|m2ts|rmvb|webm|ts)
 	do
 		target="${infile%.*}.mkv"
-		# mkvmerge -o tmpout.mkv -a eng,und,ger -s eng,und $infile
-		mkvmerge -o tmpout.mkv -a !rus -s eng,und $infile
+		mkvmerge -o tmpout.mkv -a jpn -s eng,und $infile
 		if [[ $? -eq 0 ]]; then
 			rm $infile
 			mv tmpout.mkv $target
@@ -297,11 +303,12 @@ derus() {
 	done
 }
 
-jpnonly() {
+derus() {
 	for infile in *.(avi|divx|flv|mov|m4v|mkv|mp4|mpg|mpeg|m2ts|rmvb|webm|ts)
 	do
 		target="${infile%.*}.mkv"
-		mkvmerge -o tmpout.mkv -a jpn -s eng,und $infile
+		# mkvmerge -o tmpout.mkv -a eng,und,ger -s eng,und $infile
+		mkvmerge -o tmpout.mkv -a !rus -s eng,und $infile
 		if [[ $? -eq 0 ]]; then
 			rm $infile
 			mv tmpout.mkv $target
@@ -390,59 +397,63 @@ brewlisttap() {
 }
 
 # https://stackoverflow.com/questions/27159322/rgb-values-of-the-colors-in-the-ansi-extended-colors-index-17-255
-termcolors () {
-    print TERM
-    print -P "Foreground: >█<"
-    print -P "Background: >%S█%s<\n"
+# termcolors () {
+#     print TERM
+#     print -P "Foreground: >█<"
+#     print -P "Background: >%S█%s<\n"
 
-    print "      0 1 2 3 4 5 6 7"
-    for b (0 1)
-    do
-        printf "%d %2d " $b $(( 8 * b ))
-        for r (0 1 2 3 4 5 6 7)
-        do
-            c=$(( 8 * b + r ))
-            print -nP "%K{$c}  %k"
-        done
-        printf " %2d\n" $(( 8 * b + 7 ))
-    done
+#     print "      0 1 2 3 4 5 6 7"
+#     for b (0 1)
+#     do
+#         printf "%d %2d " $b $(( 8 * b ))
+#         for r (0 1 2 3 4 5 6 7)
+#         do
+#             c=$(( 8 * b + r ))
+#             print -nP "%K{$c}  %k"
+#         done
+#         printf " %2d\n" $(( 8 * b + 7 ))
+#     done
 
-    print
+#     print
 
-    print RGB
-    for r (0 1 2 3 4 5)
-    do
-        print "$r $(( 16 + 36 * r )) - $(( 16 + 36 * r + 35 ))\n       0 1 2 3 4 5"
-        for g (0 1 2 3 4 5)
-        do
-            printf "%d %3d " $g $(( 16 + 36 * r + 6 * g ))
-            for b (0 1 2 3 4 5)
-            do
-                c=$(( 16 + 36 * r + 6 * g + b ))
-                print -nP "%K{$c}  %k"
-            done
-            printf " %3d\n" $(( 16 + 36 * r + 6 * g + 5))
-        done
-        print
-    done
+#     print RGB
+#     for r (0 1 2 3 4 5)
+#     do
+#         print "$r $(( 16 + 36 * r )) - $(( 16 + 36 * r + 35 ))\n       0 1 2 3 4 5"
+#         for g (0 1 2 3 4 5)
+#         do
+#             printf "%d %3d " $g $(( 16 + 36 * r + 6 * g ))
+#             for b (0 1 2 3 4 5)
+#             do
+#                 c=$(( 16 + 36 * r + 6 * g + b ))
+#                 print -nP "%K{$c}  %k"
+#             done
+#             printf " %3d\n" $(( 16 + 36 * r + 6 * g + 5))
+#         done
+#         print
+#     done
 
-    print
+#     print
 
-    print GRAY
-    for g in $(seq 0 23)
-    do
-        c=$(( 232 + g ))
-        printf "%2d %3d " $g $c
-        print -P "%K{$c}  %k"
-    done
-}
+#     print GRAY
+#     for g in $(seq 0 23)
+#     do
+#         c=$(( 232 + g ))
+#         printf "%2d %3d " $g $c
+#         print -P "%K{$c}  %k"
+#     done
+# }
 
 ######################################################################
 #	 A l i a s e s
 ######################################################################
-# alias l='ls -1'          # Lists in one column, hidden files.
-# alias ll='ls -lhA'        # Lists human readable sizes.
+alias l='ls -1'          # Lists in one column, hidden files.
+alias ll='ls -lhA'        # Lists human readable sizes.
 
+alias -g G="| grep"
+alias -g L="| less"
+alias zshrc="code $ZPREZTODIR/runcoms/zshrc"
+alias zrc="open $ZPREZTODIR/zsh_refcard.pdf"
 # alias l='ls -1A'         # Lists in one column, hidden files.
 # alias lr='ll -R'         # Lists human readable sizes, recursively.
 # alias la='ll -A'         # Lists human readable sizes, hidden files.
