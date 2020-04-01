@@ -34,7 +34,7 @@ fi
 #
 
 # Ensure path arrays do not contain duplicates.
-typeset -gU cdpath fpath mailpath path
+typeset -gU path fpath manpath cdpath
 
 # Set the list of directories that cd searches.
 # cdpath=(
@@ -42,10 +42,36 @@ typeset -gU cdpath fpath mailpath path
 # )
 
 # Set the list of directories that Zsh searches for programs.
+#	/Users/jking/.rbenv/shims
 path=(
-  /usr/local/{bin,sbin}
+	/usr/local/opt/sqlite/bin
+	/usr/local/opt/sqlite-analyzer/bin
+	/usr/local/opt/ruby/bin
+	/usr/local/opt/qt/bin
+	/usr/local/opt/curl/bin
+	/usr/local/opt/gettext/bin
+	/usr/local/opt/icu4c/bin
+	/usr/local/opt/icu4c/sbin
+	/usr/local/opt/binutils/bin
+	/usr/local/opt/coreutils/libexec/gnubin
+	/usr/local/opt/findutils/libexec/gnubin
+	/usr/local/opt/texinfo/bin
+	/usr/local/opt/ed/libexec/gnubin
+	/usr/local/opt/calc/libexec/cscript
+	/usr/local/opt/opencv3/bin
+	/usr/local/opt/unzip/bin
+	/usr/local/{,s}bin
+	/usr/{,s}bin
+	/{,s}bin
+	$GOROOT
+	/Applications/VICE/tools
+	/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/bin
+	/usr/local/lib/ruby/gems/2.7.0/bin
   $path
 )
+for path_file in /etc/paths.d/*(.N); do
+	path+=($(<$path_file))
+done
 
 #
 # Less

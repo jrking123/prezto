@@ -17,7 +17,438 @@ if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
   source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 fi
 
-# Customize to your needs...
+HIST_STAMPS='yyyy-mm-dd'
+HISTFILE=$HOME/.zsh_history
+HISTSIZE=SAVEHIST=2000000
+setopt COMPLETE_ALIASES
+setopt COMPLETE_IN_WORD # allow completion from within a word/phrase
+setopt EXTENDED_GLOB # If the EXTENDED_GLOB option is set, the ‘^’ and ‘#’ characters also denote a pattern
+setopt EXTENDED_HISTORY
+setopt INTERACTIVECOMMENTS # pound sign in interactive prompt
+setopt NUMERIC_GLOB_SORT
+setopt PROMPT_SUBST
+setopt HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE HIST_VERIFY
+setopt INC_APPEND_HISTORY SHARE_HISTORY LONG_LIST_JOBS
+setopt LIST_AMBIGUOUS # complete as much of a completion until it gets ambiguous
+export EDITOR='code'
+export DEFAULT_USER='jking'
+export GOROOT='/usr/local/opt/go/libexec/bin'
+export GOPATH=$HOME/go
+export VTKPATH='/usr/local/VTK'
+export PKG_CONFIG_PATH='/usr/local/opt/curl/lib/pkgconfig:/usr/local/opt/icu4c/lib/pkgconfig:/usr/local/opt/ruby/lib/pkgconfig'
+export ZSH_CACHE=$HOME/.zsh/cache
+export RBENV_SHELL=zsh
+export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$(brew --prefix openssl@1.1)"
+export ITERM2_SQUELCH_MARK=1
+
+cdpath=($HOME/ToWatch $HOME/Downloads)
+
+manpath=(
+	/usr/local/opt/coreutils/libexec/gnuman
+	/usr/local/opt/curl/share/man/man1
+	/usr/local/opt
+	/usr/local/share/info
+	/usr/local/share/man
+	/usr/share/info
+	/usr/share/man
+)
+export MANPATH="$MANPATH:$CONDA_PREFIX/share/man"
+
+source /usr/local/etc/profile.d/z.sh
+source /usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc
+source $HOME/.iterm2_shell_integration.zsh
+iterm2_print_user_vars() { iterm2_set_user_var gitBranch $((git branch 2> /dev/null) | grep \* | cut -c3-) }
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+######################################################################
+#	F u n c t i o n s
+######################################################################
+freload() { while (( $# ))
+	do
+		unfunction $1
+		autoload -U $1
+		shift
+	done
+}
+
+extractebooks() {
+	for d in */;
+	do
+		# dname=${d%*/}
+		echo ${d%*/}
+		cd $d
+		parallel -j1 7z e -y -bso0 {} ::: *.zip && 7z e -y -bso0 *.rar([1])
+		if [[ $? -eq 0 ]]; then
+			rm *.(r*|zip|nfo|diz)
+			zmv '(*)' ../$PWD:t.'$1:e'
+		fi
+		cd ..
+	done
+	find $PWD -type d -empty -delete
+}
+
+# Unzip set of zip files and extract rar inside
+# unziprar() {
+# 	7z -y -otmpout e '*.zip'
+# 	if test -n "$(find tmpout/ -maxdepth 1 -name '*.rar' -print -quit)"; then
+# 		7z e tmpout/*.rar
+# 		if [ $? -eq 0 ]; then
+# 			echo 'Deleting temp folder...'
+# 			rm -r tmpout/
+# 			rm *.(rar|zip|nfo|diz)
+# 		fi
+# 	fi
+# }
+
+7zthefolders() {
+	for item in *;
+	do
+		if [[ -d ${item} && $? -eq 0 ]]; then
+			zfilename=${item}.7z
+			print 'Item: ' $item
+			print '7z File: ' $zfilename
+			7z a -sdel $zfilename $item
+		fi
+	done
+}
+
+# Concat a series of mp4 files
+concatvid() {
+    ffmpeg -f concat -safe 0 -i <(printf "file '$PWD/%s'\n" ./*.mp4) -c copy output.mkv
+}
+
+# Merge subtitles
+mergesubs() {
+	allerror=0
+	for infile in *.(avi|divx|flv|mov|m4v|mp4|mkv|mpg|mpeg|m2ts|rmvb|webm|ts)
+	do
+		subfile=${infile:r}.srt
+		if [[ ! -f $subfile ]]; then
+			subfile=${infile:r}.idx
+		fi
+		if [[ ! -f $subfile ]]; then
+			subfile=${infile:r}.vtt
+		fi
+		if [[ -f $subfile ]]; then
+			# print 'Subtitle file: ' $subfile
+			outfile=${infile:r}.mkv
+			print '🔵  Input file: ' $infile
+			print 'Output file: ' $outfile
+			mkvmerge -o tmpout.mkv $infile --sub-charset 0:UTF-8 --language 0:eng --default-track 0:no $subfile
+			if [[ $? -eq 0 ]]; then
+				print 'Deleting input files...'
+				rm $infile
+				rm $subfile
+				if [[ -f ${infile:r}.sub ]]; then
+					rm ${infile:r}.sub
+				fi
+				mv tmpout.mkv $outfile
+			else
+				allerror=1
+			fi
+		fi
+	done
+	return "$allerror"
+}
+
+# find $PWD -path '*/.*' -prune -o \( -name '*.azw' -or -name '*.azw3' -or -name '*.azw4' -or -name '*.chm' -or -name '*.docx' -or -name '*.fb2' -or -name '*.fbz' -or -name '*.html' -or -name '*.htmlz' -or -name '*.lit' -or -name '*.lrf' -or -name '*.mobi' -or -name '*.odt' -or -name '*.prc' -or -name '*.pdb' -or -name '*.pml' -or -name '*.rb' -or -name '*.rtf' -or -name '*.snb' -or -name '*.tcr' -or -name '*.txt' -or -name '*.txtz' \) -print0 | parallel -0 "ebook-convert {} {}.epub --no-default-epub-cover && rm {}"
+
+
+###################################################
+# https://shkspr.mobi/blog/2018/03/convert-surround-sound-wav-albums-to-individual-opus-files/
+# json=$(ffprobe -i "file.mkv" -print_format json -show_chapters -loglevel error)
+# count=$(echo $json | jq ".chapters | length" )
+
+# mkvmerge test.mkv -D -S --split chapters:all -o "file-%02d.mkv"
+
+# COUNTER=1
+# while [ $COUNTER -le $count ]; do
+
+#   printf -v zerotrack "%02d" $COUNTER
+
+#   json=$(ffprobe -i "$zerotrack.mkv" -print_format json -show_chapters -loglevel error)
+#   title=$(echo $json | jq ".chapters[0].tags.title" -r)
+#   filename="[$zerotrack] $title"
+
+#   mkvextract tracks "$zerotrack.mkv" 0:"$filename.opus"
+#   let COUNTER=COUNTER+1
+# done
+
+###################################################
+
+#  https://unix.stackexchange.com/questions/202243/how-to-check-directory-is-empty
+# if ! [[ -n *.(srt|sub|idx)(#qN) || -f tmpout.mkv ]]; then
+# 	echo 'empty';
+# else
+# 	echo 'not empty';
+# fi
+
+# Flatten folders
+# flatfolders() {
+# 	for folder in *(F)
+# 	do
+# 		files=($folder/*(ND.))
+# 		if [[ $#files = 1 ]]; then
+# 			print '===> Folder: ' $folder '  Qty: ' $#files
+# 			print -l $files '\n'
+# 		fi
+# 	done
+# }
+
+##### e() { subl "${1:-.}"; }
+#  e() {
+#     if [ "$1" != "" ]
+#     then
+#         subl $1
+#     else
+#         subl .
+#     fi
+# }
+
+toepub() {
+	for infile in *.(mobi|lit)
+	do
+		target="${infile%.*}.epub"
+		echo '📘 → 📙 Converting: ' $infile
+		ebook-convert $infile $target --no-default-epub-cover
+		if [[ $? < 2 ]]; then
+			rm $infile
+		else
+			echo '❗️  ' $infile
+		fi
+	done
+}
+
+tomkv() {
+	for infile in *.(asf|avi|divx|flv|mov|m4v|mp4|mpg|mpeg|m2ts|rmvb|webm|ts|wmv)
+	do
+		target="${infile%.*}.mkv"
+		echo '🔵  Processing: ' $infile
+		mkvmerge -o tmpout.mkv $infile
+		if [[ $? < 2 ]]; then
+			rm $infile
+			mv tmpout.mkv $target
+		else
+			echo '🔶  FFMPEG Processing: ' $infile
+			ffmpeg -hide_banner -y -fflags +genpts -i $infile -c:v copy -c:a copy -c:s copy tmpout.mkv
+			if [[ $? < 2 ]]; then
+				rm $infile
+				mv tmpout.mkv $target
+			else
+				rm tmpout.mkv
+			fi
+		fi
+	done
+}
+
+tomka() {
+	for infile in *.(m4a|mp3)
+	do
+		target="${infile%.*}.mka"
+		echo '🔵  Processing: ' $infile
+		mkvmerge -o tmpout.mkv $infile
+		if [[ $? -eq 0 ]]; then
+			rm $infile
+			mv tmpout.mka $target
+		else
+			echo '🔶  FFMPEG Processing: ' $infile
+			ffmpeg -hide_banner -y -fflags +genpts -i $infile -c copy tmpout.mka
+			if [[ $? < 2 ]]; then
+				rm $infile
+				mv tmpout.mka $target
+			else
+				rm tmpout.mka
+			fi
+		fi
+	done
+}
+# mkvmerge -o '$i-sub.mkv' '$i.mkv' --default-track 0:no '$i.srt'
+# mencoder -idx Mary\ Tyler\ Moore\ Show\ -\ 01x02\ -\ Today\ I\ Am\ A\ Maam.avi -ovc copy -oac copy -o Mary\ Tyler\ Moore\ Show\ -\ 01x02\ -\ Today\ I\ Am\ A\ Maam2.avi
+
+jpnem() {
+	for infile in *.(avi|divx|flv|mov|m4v|mkv|mp4|mpg|mpeg|m2ts|rmvb|webm|ts)
+	do
+		target="${infile%.*}.mkv"
+		echo '🔵  Processing: ' $infile
+		mkvmerge -o tmpout.mkv -a 2 --sub-charset 3:UTF-8 --language 3:eng --default-track 3:no --forced-track 3:no --sub-charset 4:UTF-8 --language 4:eng --default-track 4:yes $infile  --track-order 0:0,0:2,0:3,0:4
+		if [[ $? < 2 ]]; then
+			rm $infile
+			mv tmpout.mkv $target
+		else
+			rm tmpout.mkv
+		fi
+	done
+}
+
+derus() {
+	for infile in *.(avi|divx|flv|mov|m4v|mkv|mp4|mpg|mpeg|m2ts|rmvb|webm|ts)
+	do
+		target="${infile%.*}.mkv"
+		# mkvmerge -o tmpout.mkv -a eng,und,ger -s eng,und $infile
+		mkvmerge -o tmpout.mkv -a !rus -s eng,und $infile
+		if [[ $? -eq 0 ]]; then
+			rm $infile
+			mv tmpout.mkv $target
+		else
+			rm tmpout.mkv
+		fi
+	done
+}
+
+jpnonly() {
+	for infile in *.(avi|divx|flv|mov|m4v|mkv|mp4|mpg|mpeg|m2ts|rmvb|webm|ts)
+	do
+		target="${infile%.*}.mkv"
+		mkvmerge -o tmpout.mkv -a jpn -s eng,und $infile
+		if [[ $? -eq 0 ]]; then
+			rm $infile
+			mv tmpout.mkv $target
+		else
+			rm tmpout.mkv
+		fi
+	done
+}
+
+engonly() {
+	for infile in *.(avi|divx|flv|mov|m4v|mkv|mp4|mpg|mpeg|m2ts|rmvb|webm|ts)
+	do
+		target="${infile%.*}.mkv"
+		# mkvmerge -o tmpout.mkv -a eng,und,ger -s eng,und $infile
+		mkvmerge -o tmpout.mkv -a eng,und -s eng,und $infile
+		if [[ $? -eq 0 ]]; then
+			rm $infile
+			mv tmpout.mkv $target
+		else
+			rm tmpout.mkv
+		fi
+	done
+}
+
+h265it() {
+	for infile in *.(avi|divx|flv|mov|m4v|mkv|mp4|mpg|mpeg|m2ts|rmvb|webm|ts)
+	do
+		echo '🔵  Input file: ' $infile
+		target="${infile%.*}.mkv"
+		# ffmpeg -i '$infile' -c:v libx265 -preset faster -crf 28 -c:a aac -b:a 128k tmpout.mkv
+		# ffmpeg -hide_banner -threads 4 -i '$infile' -c:v libx265 -crf 22 -c:a libopus -c:s copy tmpout.mkv
+		ffmpeg -hide_banner -i '$infile' -c:v libx265 -preset superfast -crf 22 -c:a libopus -c:s copy tmpout.mkv
+		if [[ $? -eq 0 ]]; then
+			echo 'Deleting input file'
+			rm $infile
+			mv tmpout.mkv $target
+		fi
+	done
+}
+
+2opus128k() {
+	ls *.(flac|ac3|mva) | parallel --eta --load 80% --noswap 'ffmpeg -hide_banner -i {} -c:a libopus -b:a 128k {.}.opus && rm {}'
+}
+2opus96k() {
+	# ls *.(flac|ac3|mva) | parallel --progress --load 80% --noswap 'ffmpeg -hide_banner -i {} -c:a libopus -b:a 96k {.}.opus && rm {}'
+	ls *.(flac|ac3|mva) | parallel --progress --load 80% --noswap 'opusenc {} {.}.opus && rm {}'
+}
+
+# https://scriptingosx.com/2017/04/on-viewing-man-pages/
+# https://www.gnu.org/software/texinfo/manual/info-stnd/info-stnd.html
+mn() { open x-man-page://$@ ; }
+preman() { man -t '$@' | open -f -a 'Preview' ; }
+
+# https://wiki.archlinux.org/index.php/Convert_FLAC_to_MP3
+# find . -name '*.flac' | parallel --bar opusenc {} {.}.opus
+
+titlemkv(){
+	filename=$(basename "$1")
+	fname="${filename%.*}"
+	mkvpropedit $1 --set title=$fname
+}
+brewlistdeps() {
+	for app in $(brew list)
+	do
+		echo -n $fg[blue]$app $fg[white]
+		brew deps $app | awk '{printf(" %s ", $0)}'
+		echo ''
+	done
+}
+
+brewlisttaps() {
+	for app in $(brew list)
+	do
+		brew info $app
+		echo ''
+	done
+}
+
+brewlisttap() {
+	for app in $(brew list)
+	do
+		if brew info $app | grep 'homebrew-cask'; then
+			echo $app
+		fi
+	done
+}
+
+# https://stackoverflow.com/questions/27159322/rgb-values-of-the-colors-in-the-ansi-extended-colors-index-17-255
+termcolors () {
+    print TERM
+    print -P "Foreground: >█<"
+    print -P "Background: >%S█%s<\n"
+
+    print "      0 1 2 3 4 5 6 7"
+    for b (0 1)
+    do
+        printf "%d %2d " $b $(( 8 * b ))
+        for r (0 1 2 3 4 5 6 7)
+        do
+            c=$(( 8 * b + r ))
+            print -nP "%K{$c}  %k"
+        done
+        printf " %2d\n" $(( 8 * b + 7 ))
+    done
+
+    print
+
+    print RGB
+    for r (0 1 2 3 4 5)
+    do
+        print "$r $(( 16 + 36 * r )) - $(( 16 + 36 * r + 35 ))\n       0 1 2 3 4 5"
+        for g (0 1 2 3 4 5)
+        do
+            printf "%d %3d " $g $(( 16 + 36 * r + 6 * g ))
+            for b (0 1 2 3 4 5)
+            do
+                c=$(( 16 + 36 * r + 6 * g + b ))
+                print -nP "%K{$c}  %k"
+            done
+            printf " %3d\n" $(( 16 + 36 * r + 6 * g + 5))
+        done
+        print
+    done
+
+    print
+
+    print GRAY
+    for g in $(seq 0 23)
+    do
+        c=$(( 232 + g ))
+        printf "%2d %3d " $g $c
+        print -P "%K{$c}  %k"
+    done
+}
+
+######################################################################
+#	 A l i a s e s
+######################################################################
+# alias l='ls -1'          # Lists in one column, hidden files.
+# alias ll='ls -lhA'        # Lists human readable sizes.
+
+# alias l='ls -1A'         # Lists in one column, hidden files.
+# alias lr='ll -R'         # Lists human readable sizes, recursively.
+# alias la='ll -A'         # Lists human readable sizes, hidden files.
+# alias lm='la | "$PAGER"' # Lists human readable sizes, hidden files through pager.
+# alias lx='ll -XB'        # Lists sorted by extension (GNU only).
+# alias lk='ll -Sr'        # Lists sorted by size, largest last.
+# alias lt='ll -tr'        # Lists sorted by date, most recent last.
+# alias lc='lt -c'         # Lists sorted by date, most recent last, shows change time.
+# alias lu='lt -u'         # Lists sorted by date, most recent last, shows access time.
