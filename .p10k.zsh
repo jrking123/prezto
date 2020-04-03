@@ -201,7 +201,7 @@
 
   ##################################[ dir: current directory ]##################################
   # Current directory background color.
-  # typeset -g POWERLEVEL9K_DIR_BACKGROUND=4
+  typeset -g POWERLEVEL9K_DIR_BACKGROUND='#242049'
   # Default current directory foreground color.
   typeset -g POWERLEVEL9K_DIR_FOREGROUND=254
   # If directory is too long, shorten some of its segments to the shortest possible unique
@@ -876,7 +876,7 @@
   #####################[ anaconda: conda environment (https://conda.io/) ]######################
   # Anaconda environment color.
   typeset -g POWERLEVEL9K_ANACONDA_FOREGROUND=253
-  typeset -g POWERLEVEL9K_ANACONDA_BACKGROUND=28
+  typeset -g POWERLEVEL9K_ANACONDA_BACKGROUND='#2f4f4f'
   # Don't show Python version next to the anaconda environment name.
   typeset -g POWERLEVEL9K_ANACONDA_SHOW_PYTHON_VERSION=false
   # Separate environment name from Python version only with a space.
