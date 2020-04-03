@@ -875,8 +875,8 @@
 
   #####################[ anaconda: conda environment (https://conda.io/) ]######################
   # Anaconda environment color.
-  # typeset -g POWERLEVEL9K_ANACONDA_FOREGROUND=0
-  # typeset -g POWERLEVEL9K_ANACONDA_BACKGROUND=4
+  typeset -g POWERLEVEL9K_ANACONDA_FOREGROUND=253
+  typeset -g POWERLEVEL9K_ANACONDA_BACKGROUND=28
   # Don't show Python version next to the anaconda environment name.
   typeset -g POWERLEVEL9K_ANACONDA_SHOW_PYTHON_VERSION=false
   # Separate environment name from Python version only with a space.

@@ -46,16 +46,15 @@ export ITERM2_SQUELCH_MARK=1
 
 cdpath=($HOME/ToWatch $HOME/Downloads)
 
-manpath=(
-	/usr/local/opt/coreutils/libexec/gnuman
-	/usr/local/opt/curl/share/man/man1
-	/usr/local/opt
-	/usr/local/share/info
-	/usr/local/share/man
-	/usr/share/info
-	/usr/share/man
-)
-export MANPATH="$MANPATH:$CONDA_PREFIX/share/man"
+# manpath=(
+# 	/usr/local/opt/coreutils/libexec/gnuman
+# 	/usr/local/opt
+# 	/usr/local/share/info
+# 	/usr/local/share/man
+# 	/usr/share/info
+# 	/usr/share/man
+# )
+# export MANPATH="$MANPATH:$CONDA_PREFIX/share/man"
 
 source /usr/local/etc/profile.d/z.sh
 source /usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.zsh.inc
