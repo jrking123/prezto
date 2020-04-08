@@ -446,9 +446,12 @@ brewlisttap() {
 ######################################################################
 #	 A l i a s e s
 ######################################################################
-alias l='ls -1'          # Lists in one column, hidden files.
-alias ll='ls -lhA'        # Lists human readable sizes.
-
+# alias l='ls -1'          # Lists in one column, hidden files.
+# alias ll='ls -lhA'        # Lists human readable sizes.
+alias l='lsd -l --blocks size,date,name'
+alias la='lsd -la --blocks size,date,name'
+alias ll='lsd -l'
+alias lla='lsd -la'
 alias -g G="| grep"
 alias -g L="| less"
 alias zshrc="code $ZPREZTODIR/runcoms/zshrc"
@@ -479,7 +482,8 @@ unset __conda_setup
 conda activate py37
 # <<< conda initialize <<<
 
-# [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+# export FZF_DEFAULT_OPTS=‘—height=40% —preview=“cat {}” —preview-window=right:60%:wrap’
 # Setup fzf
 # ---------
 if [[ ! "$PATH" == */usr/local/opt/fzf/bin* ]]; then

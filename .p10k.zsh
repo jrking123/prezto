@@ -31,8 +31,10 @@
 
   # The list of segments shown on the left. Fill it with the most important segments.
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
-    # os_icon                 # os identifier
+    # os_icon               # os identifier
+    root_indicator
     dir                     # current directory
+    dir_writable
     vcs                     # git status
     # prompt_char           # prompt symbol
   )
@@ -43,8 +45,8 @@
   # last prompt line gets hidden if it would overlap with left prompt.
   typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(
     status                  # exit code of the last command
-    command_execution_time  # duration of the last command
     background_jobs         # presence of background jobs
+    command_execution_time  # duration of the last command
     anaconda                # conda environment (https://conda.io/)
     context                 # user@hostname
     vpn_ip                  # virtual private network indicator
@@ -210,7 +212,7 @@
   typeset -g POWERLEVEL9K_DIR_BACKGROUND='#525456'
   # typeset -g POWERLEVEL9K_DIR_BACKGROUND='#032e59'
   # Default current directory foreground color.
-  typeset -g POWERLEVEL9K_DIR_FOREGROUND='white'
+  typeset -g POWERLEVEL9K_DIR_FOREGROUND='#f5f5f5'
   # If directory is too long, shorten some of its segments to the shortest possible unique
   # prefix. The shortened directory can be tab-completed to the original.
   typeset -g POWERLEVEL9K_SHORTEN_STRATEGY=truncate_to_unique
@@ -460,7 +462,8 @@
   typeset -g POWERLEVEL9K_STATUS_OK=true
   typeset -g POWERLEVEL9K_STATUS_OK_VISUAL_IDENTIFIER_EXPANSION='✔'
   # typeset -g POWERLEVEL9K_STATUS_OK_FOREGROUND=2
-  typeset -g POWERLEVEL9K_STATUS_OK_BACKGROUND="#404243"
+  # typeset -g POWERLEVEL9K_STATUS_OK_BACKGROUND="#5c5c5c"
+  # typeset -g POWERLEVEL9K_STATUS_OK_BACKGROUND="#404243"
 
   # Status when some part of a pipe command fails but the overall exit status is zero.
   # It may look like this: 1|0.
@@ -886,8 +889,10 @@
   # Anaconda environment color.
   # typeset -g POWERLEVEL9K_ANACONDA_FOREGROUND=253
   # typeset -g POWERLEVEL9K_ANACONDA_BACKGROUND='#2f4f4f'
-  typeset -g POWERLEVEL9K_ANACONDA_FOREGROUND=253
-  typeset -g POWERLEVEL9K_ANACONDA_BACKGROUND='#4a4b4d'
+  typeset -g POWERLEVEL9K_ANACONDA_FOREGROUND='white'
+  typeset -g POWERLEVEL9K_ANACONDA_BACKGROUND='#262626'
+  # typeset -g POWERLEVEL9K_ANACONDA_BACKGROUND='#383838'
+  # typeset -g POWERLEVEL9K_ANACONDA_BACKGROUND='#4a4b4d'
   # Don't show Python version next to the anaconda environment name.
   typeset -g POWERLEVEL9K_ANACONDA_SHOW_PYTHON_VERSION=false
   # Separate environment name from Python version only with a space.
@@ -1417,8 +1422,8 @@
 
   ########################[ vpn_ip: virtual private network indicator ]#########################
   # VPN IP color.
-  # typeset -g POWERLEVEL9K_VPN_IP_FOREGROUND=0
-  # typeset -g POWERLEVEL9K_VPN_IP_BACKGROUND=6
+  typeset -g POWERLEVEL9K_VPN_IP_FOREGROUND="blue"
+  typeset -g POWERLEVEL9K_VPN_IP_BACKGROUND="#404040"
   # When on VPN, show just an icon without the IP address.
   # Tip: To display the private IP address when on VPN, remove the next line.
   typeset -g POWERLEVEL9K_VPN_IP_CONTENT_EXPANSION=
